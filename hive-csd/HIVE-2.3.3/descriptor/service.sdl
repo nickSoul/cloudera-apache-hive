@@ -1,0 +1,455 @@
+{
+    "name": "APACHE_HIVE",
+    "label": "Apache Hive",
+    "description": "The Apache Hive",
+    "version": "2.3.3",
+    "runAs": {
+        "user": "hive",
+        "group": "hive"
+    },
+    "parcel": {
+        "requiredTags": [
+            "Apache Hive",
+            "cdh"
+        ]
+    },
+    "icon": "images/hive_logo.png",
+    "roles": [
+        {
+            "name": "METASTORE",
+            "label": "MetaStore",
+            "pluralLabel": "Metastore",
+            "startRunner": {
+                "program": "scripts/hive",
+                "args": [
+                    "--service",
+                    "metastore"
+                ],
+                "environmentVariables": {
+                    "CONFIGURED_OPTS": "${hive_metastore_opts}"
+                }
+            },
+            "healthAggregation": {
+                "type": "nonSingleton",
+                "percentGreenForGreen": 90.0,
+                "percentYellowGreenForYellow": 50.0
+            },
+            "parameters": [
+                {
+                    "name": "hive_metastore_opts",
+                    "label": "hive_metastore_opts",
+                    "description": "hive metastore opts",
+                    "configName": "hive.metastore.opts",
+                    "type": "string",
+                    "required": "false",
+                    "default": "-Xmx1024m"
+                },
+                {
+                    "name": "hive_metastore_thrift_port",
+                    "label": "hive_metastore_thrift_port",
+                    "description": "hive metastore thrift port",
+                    "configName": "hive.metastore.port",
+                    "default": 9083,
+                    "type": "port",
+                    "required": "true"
+                },
+                {
+                    "name": "metastore_connection_password",
+                    "label": "metastore_connection_password",
+                    "description": "password to use against metastore database",
+                    "configName": "javax.jdo.option.ConnectionPassword",
+                    "required": "true",
+                    "type": "password",
+                    "default": "hive"
+                },
+                {
+                    "name": "metastore_connection_uname",
+                    "label": "metastore_connection_uname",
+                    "description": "Username to use against metastore database",
+                    "configName": "javax.jdo.option.ConnectionUserName",
+                    "required": "false",
+                    "default": "hive",
+                    "type": "string"
+                },
+                {
+                    "name": "metastore_connection_url",
+                    "label": "metastore_connection_url",
+                    "description": "metastore database jdbc url",
+                    "configName": "javax.jdo.option.ConnectionURL",
+                    "required": "true",
+                    "type": "string",
+                    "default": "jdbc:mysql://cdh0:3306/hive"
+                },
+                {
+                    "name": "metastore_metrics_enabled",
+                    "label": "metastore_metrics_enabled",
+                    "description": "enable metastore metrics report",
+                    "configName": "hive.metastore.metrics.enabled",
+                    "required": "true",
+                    "type": "string",
+                    "default": "true"
+                }
+            ],
+            "configWriter": {
+                "generators": [
+                    {
+                        "filename": "hive-site.xml",
+                        "configFormat": "hadoop_xml",
+                        "includedParams": [
+                            "hive_metastore_thrift_port",
+                            "metastore_connection_password",
+                            "metastore_connection_uname",
+                            "metastore_connection_url",
+                            "metastore_metrics_enabled",
+                            "hive_metric_class",
+                            "hive_metric_reporter",
+                            "hive_metric_file_loc",
+                            "hive_metric_file_frequency"
+                        ]
+                    },
+                    {
+                        "filename": "hive-log4j2.properties",
+                        "configFormat": "properties",
+                        "includedParams": [
+                            "hive_log4j2_threshhold",
+                            "hive_log4j2_logDir"
+                        ],
+                        "additionalConfigs": [
+                            {
+                                "key": "appenders",
+                                "value": "DRFA"
+                            },
+                            {
+                                "key": "appender.DRFA.type",
+                                "value": "RollingRandomAccessFile"
+                            },
+                            {
+                                "key": "appender.DRFA.name",
+                                "value": "DRFA"
+                            },
+                            {
+                                "key": "appender.DRFA.filePattern",
+                                "value": "${hive_log4j2_logDir}/hive-metastore-${host}.log.%d{yyyy-MM-dd}"
+                            },
+                            {
+                                "key": "appender.DRFA.layout.type",
+                                "value": "PatternLayout"
+                            },
+                            {
+                                "key": "appender.DRFA.layout.pattern",
+                                "value": "%d{ISO8601} %5p [%t] %c{2}: %m%n"
+                            },
+                            {
+                                "key": "appender.DRFA.policies.type",
+                                "value": "Policies"
+                            },
+                            {
+                                "key": "appender.DRFA.policies.time.type",
+                                "value": "TimeBasedTriggeringPolicy"
+                            },
+                            {
+                                "key": "appender.DRFA.policies.time.interval",
+                                "value": "1"
+                            },
+                            {
+                                "key": "appender.DRFA.policies.time.modulate",
+                                "value": "true"
+                            },
+                            {
+                                "key": "appender.DRFA.strategy.type",
+                                "value": "DefaultRolloverStrategy"
+                            },
+                            {
+                                "key": "appender.DRFA.strategy.max",
+                                "value": "30"
+                            },
+                            {
+                                "key": "rootLogger.level",
+                                "value": "${hive_log4j2_threshhold}"
+                            },
+                            {
+                                "key": "rootLogger.appenderRefs",
+                                "value": "root"
+                            },
+                            {
+                                "key": "rootLogger.appenderRef.root.ref",
+                                "value": "DRFA"
+                            },
+                            {
+                                "key": "appender.DRFA.fileName",
+                                "value": "${hive_log4j2_logDir}/hive-metastore-${host}.log"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "name": "HIVE_SERVER2",
+            "label": "HiveServer2",
+            "pluralLabel": "HiveServer2",
+            "startRunner": {
+                "program": "scripts/hive",
+                "args": [
+                    "--service",
+                    "hiveserver2"
+                ],
+                "environmentVariables": {
+                    "CONFIGURED_OPTS": "${hive_hiveserver2_opts}"
+                }
+            },
+            "healthAggregation": {
+                "type": "nonSingleton",
+                "percentGreenForGreen": 90.0,
+                "percentYellowGreenForYellow": 50.0
+            },
+            "externalLink": {
+                "name": "hive_server2_webui",
+                "label": "HiveServer2 Web UI",
+                "url": "http://${host}:${hiveserver2_webui_port}"
+            },
+            "parameters": [
+                {
+                    "name": "hive_hiveserver2_opts",
+                    "label": "hiveserver2 vm opts",
+                    "description": "HiveServer2 Vm opts",
+                    "configName": "hive.server2.opts",
+                    "default": "-Xmx1024m",
+                    "type": "string",
+                    "required": "false"
+                },
+                {
+                    "name": "hiveserver2_webui_port",
+                    "label": "hiveserver2 WebUi port",
+                    "description": "HiveServer2 Web UI port",
+                    "configName": "hive.server2.webui.port",
+                    "default": 10002,
+                    "type": "port",
+                    "required": "true"
+                },
+                {
+                    "name": "hive_server2_thrift_port",
+                    "label": "hive_server2_thrift_port",
+                    "description": "hiveserver2 port",
+                    "configName": "hive.server2.thrift.port",
+                    "default": 10000,
+                    "type": "port",
+                    "required": "false"
+                },
+                {
+                    "name": "hive_metastore_uris",
+                    "label": "hive_metastore_uris",
+                    "description": "hive metastore uris",
+                    "configName": "hive.metastore.uris",
+                    "required": "false",
+                    "type": "string",
+                    "default": "thrift://cdh2:9083"
+                },
+                {
+                    "name": "hive_zookeeper_quorum",
+                    "label": "hive_zookeeper_quorum",
+                    "description": "hive zookeeper quorum",
+                    "configName": "hive.zookeeper.quorum",
+                    "required": "false",
+                    "type": "string"
+                },
+                {
+                    "name": "hive_zookeeper_port",
+                    "label": "hive_zookeeper_port",
+                    "description": "hive zookeeper port",
+                    "configName": "hive.zookeeper.client.port",
+                    "required": "false",
+                    "type": "port"
+                },
+                {
+                    "name": "hive_zookeeper_namespace",
+                    "label": "hive_zookeeper_namespace",
+                    "description": "hive zookeeper namespace",
+                    "configName": "hive.zookeeper.namespace",
+                    "required": "false",
+                    "type": "string"
+                },
+                {
+                    "name": "hive_server2_enable_doAs",
+                    "label": "hive_server2_enable_doAs",
+                    "description": "hive server2 enable doAs",
+                    "configName": "hive.server2.enable.doAs",
+                    "required": "false",
+                    "type": "string",
+                    "default": "false"
+                },
+                {
+                    "name": "hive_server2_metrics_enabled",
+                    "label": "hive_server2_metrics_enabled",
+                    "description": "hive server2 metrics enabled",
+                    "configName": "hive.server2.metrics.enabled",
+                    "required": "false",
+                    "type": "string",
+                    "default": "true"
+                },
+                {
+                    "name": "hive_txn_manager",
+                    "label": "hive_transaction_manager",
+                    "description": "hive transaction manager: \n org.apache.hadoop.hive.ql.lockmgr.DummyTxnManager or org.apache.hadoop.hive.ql.lockmgr.DbTxnManager",
+                    "configName": "hive.txn.manager",
+                    "required": "true",
+                    "type": "string",
+                    "default": "org.apache.hadoop.hive.ql.lockmgr.DummyTxnManager"
+                }
+            ],
+            "configWriter": {
+                "generators": [
+                    {
+                        "filename": "hive-site.xml",
+                        "configFormat": "hadoop_xml",
+                        "includedParams": [
+                            "hiveserver2_webui_port",
+                            "hive_server2_thrift_port",
+                            "hive_metastore_uris",
+                            "hive_zookeeper_quorum",
+                            "hive_zookeeper_port",
+                            "hive_zookeeper_namespace",
+                            "hive_server2_enable_doAs",
+                            "hive_server2_metrics_enabled",
+                            "hive_metric_class",
+                            "hive_metric_reporter",
+                            "hive_metric_file_loc",
+                            "hive_metric_file_frequency",
+                            "hive_txn_manager"
+                        ]
+                    },
+                    {
+                        "filename": "hive-log4j2.properties",
+                        "configFormat": "properties",
+                        "includedParams": [
+                            "hive_log4j2_threshhold",
+                            "hive_log4j2_logDir"
+                        ],
+                        "additionalConfigs": [
+                            {
+                                "key": "appenders",
+                                "value": "DRFA"
+                            },
+                            {
+                                "key": "appender.DRFA.type",
+                                "value": "RollingRandomAccessFile"
+                            },
+                            {
+                                "key": "appender.DRFA.name",
+                                "value": "DRFA"
+                            },
+                            {
+                                "key": "appender.DRFA.filePattern",
+                                "value": "${hive_log4j2_logDir}/hive-hiveserver2-${host}.log.%d{yyyy-MM-dd}"
+                            },
+                            {
+                                "key": "appender.DRFA.layout.type",
+                                "value": "PatternLayout"
+                            },
+                            {
+                                "key": "appender.DRFA.layout.pattern",
+                                "value": "%d{ISO8601} %5p [%t] %c{2}: %m%n"
+                            },
+                            {
+                                "key": "appender.DRFA.policies.type",
+                                "value": "Policies"
+                            },
+                            {
+                                "key": "appender.DRFA.policies.time.type",
+                                "value": "TimeBasedTriggeringPolicy"
+                            },
+                            {
+                                "key": "appender.DRFA.policies.time.interval",
+                                "value": "1"
+                            },
+                            {
+                                "key": "appender.DRFA.policies.time.modulate",
+                                "value": "true"
+                            },
+                            {
+                                "key": "appender.DRFA.strategy.type",
+                                "value": "DefaultRolloverStrategy"
+                            },
+                            {
+                                "key": "appender.DRFA.strategy.max",
+                                "value": "30"
+                            },
+                            {
+                                "key": "rootLogger.level",
+                                "value": "${hive_log4j2_threshhold}"
+                            },
+                            {
+                                "key": "rootLogger.appenderRefs",
+                                "value": "root"
+                            },
+                            {
+                                "key": "rootLogger.appenderRef.root.ref",
+                                "value": "DRFA"
+                            },
+                            {
+                                "key": "appender.DRFA.fileName",
+                                "value": "${hive_log4j2_logDir}/hive-hiveserver2-${host}.log"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "parameters": [
+        {
+            "name": "hive_log4j2_threshhold",
+            "label": "hive_log4j2_threshhold",
+            "description": "hive log4j2 threshhold",
+            "configName": "property.hive.log.level",
+            "required": "true",
+            "type": "string",
+            "default": "INFO"
+        },
+        {
+            "name": "hive_log4j2_logDir",
+            "label": "hive_log4j2_logDir",
+            "description": "hive log4j2 log directory",
+            "configName": "property.hive.log.dir",
+            "required": "true",
+            "type": "string",
+            "default": "/var/log/hive2"
+        },
+        {
+            "name": "hive_metric_class",
+            "label": "hive_metric_class",
+            "description": "hive service metric class",
+            "configName": "hive.service.metrics.class",
+            "required": "false",
+            "type": "string",
+            "default": "org.apache.hadoop.hive.common.metrics.metrics2.CodahaleMetrics"
+        },
+        {
+            "name": "hive_metric_reporter",
+            "label": "hive_metric_reporter",
+            "description": "comma separated list of JMX, CONSOLE, JSON_FILE, HADOOP2",
+            "configName": "hive.service.metrics.reporter",
+            "required": "false",
+            "type": "string",
+            "default": "JSON_FILE, JMX"
+        },
+        {
+            "name": "hive_metric_file_loc",
+            "label": "hive_metric_file_loc",
+            "description": "metric file location",
+            "configName": "hive.service.metrics.file.location",
+            "required": "false",
+            "type": "string",
+            "default": "/tmp/hive_metric.json"
+        },
+        {
+            "name": "hive_metric_file_frequency",
+            "label": "hive_metric_file_frequency",
+            "description": "metric file frequency",
+            "configName": "hive.service.metrics.file.frequency",
+            "required": "false",
+            "type": "string",
+            "default": "5s"
+        }
+    ]
+}
