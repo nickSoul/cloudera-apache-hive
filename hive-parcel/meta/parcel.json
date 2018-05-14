@@ -1,0 +1,36 @@
+{
+    "components": [
+        {
+            "name": "HiveServer2",
+            "version": "2.3.3"
+        },
+        {
+            "name": "MetaStore",
+            "version": "2.3.3"
+        }
+    ],
+    "depends": "CDH (>= 5.12), CDH (<< 6)",
+    "groups": [
+        "Apache"
+    ],
+    "name": "Hive",
+    "packages": [],
+    "provides": [
+        "Apache Hive"
+    ],
+    "replaces": "",
+    "schema_version": 1,
+    "scripts": {
+        "defines": "hive_env.sh"
+    },
+    "setActiveSymlink": true,
+    "users": {
+        "hive": {
+            "extra_groups": [],
+            "home": "/var/lib/hive",
+            "longname": "hive",
+            "shell": "/sbin/nologin"
+        }
+    },
+    "version": "2.3.3"
+}
